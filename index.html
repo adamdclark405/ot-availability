@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OT Availability — HQ Fire</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --accent: #f0a500;
+    --accent2: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --muted: #8b949e;
+    --text: #e6edf3;
+    --thu: #2a1f00;
+    --thu-border: #f0a500;
+    --engine-color: #ff6b35;
+    --ems-color: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; }
+
+  #thu-banner {
+    display: none;
+    background: linear-gradient(90deg, #f0a500, #e07b00);
+    color: #000;
+    text-align: center;
+    padding: 10px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  #thu-banner.show { display: block; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .logo { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.6rem; letter-spacing: 0.1em; text-transform: uppercase; }
+  .logo span { color: var(--accent); }
+  .logo-sub { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.15em; margin-top: 2px; font-weight: 400; }
+  .week-label { font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; color: var(--accent); background: rgba(240,165,0,0.1); border: 1px solid var(--accent); padding: 4px 12px; border-radius: 2px; }
+  .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  #user-bar { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  #user-bar label { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  #user-select { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'Barlow', sans-serif; font-size: 0.95rem; padding: 6px 12px; border-radius: 3px; cursor: pointer; min-width: 200px; }
+  #user-select:focus { outline: none; border-color: var(--accent); }
+  .active-user-badge { font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; color: var(--green); background: rgba(63,185,80,0.1); border: 1px solid var(--green); padding: 4px 10px; border-radius: 2px; }
+
+  .btn { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 14px; border-radius: 3px; border: 1px solid; cursor: pointer; transition: all 0.15s; }
+  .btn-outline { background: transparent; border-color: var(--border); color: var(--muted); }
+  .btn-outline:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-accent { background: var(--accent); border-color: var(--accent); color: #000; }
+  .btn-accent:hover { background: #e09400; }
+  .btn-danger { background: transparent; border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: rgba(248,81,73,0.1); }
+  .btn-green { background: transparent; border-color: var(--green); color: var(--green); }
+  .btn-green:hover { background: rgba(63,185,80,0.1); }
+
+  main { padding: 20px 16px; max-width: 1400px; margin: 0 auto; }
+
+  #admin-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 20px; }
+  #admin-panel.show { display: block; }
+  #admin-panel h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent2); margin-bottom: 14px; }
+  .roster-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .roster-chip { display: flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 4px 10px; font-size: 0.85rem; }
+  .roster-chip button { background: none; border: none; color: var(--red); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 2px; }
+  .add-name-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+  .add-name-row input, .add-name-row select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'Barlow', sans-serif; font-size: 0.9rem; padding: 6px 12px; border-radius: 3px; }
+  .add-name-row input { width: 180px; }
+  .add-name-row input:focus, .add-name-row select:focus { outline: none; border-color: var(--accent2); }
+
+  .grid-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .grid-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.05em; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 6px; }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; }
+  thead tr { background: var(--surface2); }
+  th { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 10px 8px; text-align: center; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; }
+  th:first-child { text-align: left; padding-left: 16px; min-width: 160px; }
+  th.thu-col { background: var(--thu); color: var(--accent); border-right-color: var(--thu-border); border-left: 1px solid var(--thu-border); }
+
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover:not(.section-header):not(.shift-divider) { background: rgba(255,255,255,0.02); }
+  tbody tr.is-me { background: rgba(88,166,255,0.05); }
+  tbody tr.is-me td.name-cell { border-left: 3px solid var(--accent2); }
+
+  tr.section-header td { padding: 8px 16px; font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 0.9rem; letter-spacing: 0.15em; text-transform: uppercase; border-bottom: 2px solid; border-top: 2px solid; }
+  tr.section-header.engine td { color: var(--engine-color); border-color: var(--engine-color); background: rgba(255,107,53,0.08); }
+  tr.section-header.ems td { color: var(--ems-color); border-color: var(--ems-color); background: rgba(88,166,255,0.08); }
+
+  tr.shift-divider td { padding: 4px 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); background: rgba(255,255,255,0.02); border-bottom: 1px dashed var(--border); border-top: 1px dashed var(--border); }
+
+  td { padding: 0; text-align: center; border-right: 1px solid var(--border); vertical-align: middle; }
+  td:first-child { text-align: left; }
+  td.thu-cell { background: rgba(42,31,0,0.4); border-right-color: var(--thu-border); }
+  td.thu-cell:first-of-type { border-left: 1px solid var(--thu-border); }
+  td.name-cell { padding: 10px 16px; font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
+
+  .cell-btn { display: block; width: 100%; height: 42px; min-width: 56px; border: none; cursor: pointer; font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; letter-spacing: 0.05em; transition: all 0.12s; background: transparent; color: var(--muted); }
+  .cell-btn:disabled { cursor: default; }
+  .cell-btn:not(:disabled):hover { filter: brightness(1.2); }
+  .cell-btn.avail { background: rgba(63,185,80,0.18); color: var(--green); }
+  .cell-btn.avail::after { content: "AVAIL"; }
+  .cell-btn.unavail { background: rgba(248,81,73,0.15); color: var(--red); }
+  .cell-btn.unavail::after { content: "OFF"; }
+  .cell-btn.empty::after { content: "—"; }
+
+  .stats-bar { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+  .stat-chip { font-family: 'Share Tech Mono', monospace; font-size: 0.78rem; color: var(--muted); }
+  .stat-chip strong { color: var(--text); }
+
+  #ot-section { margin-top: 28px; }
+  .ot-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.1rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .ot-title::before { content: ''; display: inline-block; width: 4px; height: 18px; background: var(--accent); border-radius: 2px; }
+  .ot-day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  .ot-day-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 12px; }
+  .ot-day-card.thu-card { border-color: var(--thu-border); background: rgba(42,31,0,0.5); }
+  .ot-day-label { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .ot-day-card.thu-card .ot-day-label { color: var(--accent); }
+  .ot-name-list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+  .ot-name-list li { font-size: 0.8rem; font-family: 'Share Tech Mono', monospace; padding: 3px 6px; border-radius: 2px; }
+  .ot-name-list li.engine-name { color: var(--engine-color); background: rgba(255,107,53,0.08); }
+  .ot-name-list li.ems-name { color: var(--green); background: rgba(63,185,80,0.08); }
+  .ot-empty { font-size: 0.78rem; color: var(--muted); font-style: italic; }
+
+  #export-section { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--accent); border-radius: 6px; padding: 28px; max-width: 420px; width: 90%; }
+  .modal h2 { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.3rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .modal p { font-size: 0.9rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  .modal-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'Barlow', sans-serif; font-size: 1rem; padding: 8px 14px; border-radius: 3px; width: 100%; margin-bottom: 16px; cursor: pointer; }
+  .modal-select:focus { outline: none; border-color: var(--accent); }
+
+  @media (max-width: 600px) {
+    header { padding: 12px 14px; }
+    main { padding: 14px 10px; }
+    .logo { font-size: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="thu-banner">
+  ⚠️ TODAY IS THURSDAY — Overtime availability must be submitted for next week (Sat–Fri). Please fill out your schedule below.
+</div>
+
+<header>
+  <div>
+    <div class="logo">HQ <span>Overtime</span> Availability</div>
+    <div class="logo-sub">Augusta Fire Department — Headquarters</div>
+  </div>
+  <div class="header-right">
+    <div class="week-label" id="week-label">Loading week...</div>
+    <button class="btn btn-outline" onclick="toggleAdmin()">⚙ Manage Roster</button>
+  </div>
+</header>
+
+<div id="user-bar">
+  <label>Viewing / Editing as:</label>
+  <select id="user-select" onchange="setCurrentUser(this.value)">
+    <option value="">— Select Your Name —</option>
+  </select>
+  <span class="active-user-badge" id="active-badge" style="display:none"></span>
+  <span style="font-size:0.78rem;color:var(--muted);">Click any cell in your row to toggle availability</span>
+</div>
+
+<main>
+
+  <div id="admin-panel">
+    <h3>📋 Roster Management</h3>
+    <div class="roster-grid" id="roster-grid"></div>
+    <div class="add-name-row">
+      <input type="text" id="new-name-input" placeholder="Name (e.g. J. Smith)" onkeydown="if(event.key==='Enter') addPerson()" />
+      <select id="new-unit-select">
+        <option value="engine">Engine Company</option>
+        <option value="ems">EMS</option>
+      </select>
+      <select id="new-shift-select">
+        <option value="1">Shift 1</option>
+        <option value="2">Shift 2</option>
+        <option value="3">Shift 3</option>
+      </select>
+      <button class="btn btn-green" onclick="addPerson()">+ Add Person</button>
+    </div>
+  </div>
+
+  <div class="grid-header">
+    <div class="grid-title">Weekly Overtime Availability Sheet</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(63,185,80,0.5)"></div>Available</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(248,81,73,0.4)"></div>Not Available</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(240,165,0,0.2);border:1px solid var(--accent)"></div>Thursday Split</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,107,53,0.5)"></div>Engine Co.</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(88,166,255,0.5)"></div>EMS</div>
+    </div>
+  </div>
+
+  <div class="stats-bar" id="stats-bar"></div>
+
+  <div class="table-wrap">
+    <table id="availability-table">
+      <thead><tr id="col-headers"><th>Name</th></tr></thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+  <div id="ot-section">
+    <div class="ot-title">Available for OT — Quick Reference</div>
+    <div class="ot-day-grid" id="ot-day-grid"></div>
+  </div>
+
+  <div id="export-section">
+    <button class="btn btn-accent" onclick="printSheet()">🖨 Print / Save PDF</button>
+    <button class="btn btn-outline" onclick="copyOTList()">📋 Copy OT List</button>
+    <button class="btn btn-danger" onclick="clearWeek()">🗑 Clear This Week's Data</button>
+  </div>
+
+</main>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>Who Are You?</h2>
+    <p>Select your name to start editing your availability. You can change this anytime from the top bar.</p>
+    <select class="modal-select" id="modal-user-select" onchange="setCurrentUser(this.value)">
+      <option value="">— Select Your Name —</option>
+    </select>
+    <button class="btn btn-accent" onclick="closeModal()" style="width:100%">Continue</button>
+  </div>
+</div>
+
+<script>
+const DAYS = [
+  { key: 'sat',    label: 'SAT',    thu: false, offset: 0 },
+  { key: 'sun',    label: 'SUN',    thu: false, offset: 1 },
+  { key: 'mon',    label: 'MON',    thu: false, offset: 2 },
+  { key: 'tue',    label: 'TUE',    thu: false, offset: 3 },
+  { key: 'wed',    label: 'WED',    thu: false, offset: 4 },
+  { key: 'thu-am', label: 'THU AM', thu: true,  offset: 5 },
+  { key: 'thu-pm', label: 'THU PM', thu: true,  offset: 5 },
+  { key: 'fri',    label: 'FRI',    thu: false, offset: 6 },
+];
+
+const DEFAULT_ROSTER = [
+  { name: 'J. Bishop',     unit: 'engine', shift: '1' },
+  { name: 'S. Watts',      unit: 'engine', shift: '2' },
+  { name: 'C. Oglesby',    unit: 'engine', shift: '2' },
+  { name: 'L. McMillan',   unit: 'engine', shift: '3' },
+  { name: 'M. Parsons',    unit: 'engine', shift: '3' },
+  { name: 'R. Kineman',    unit: 'ems', shift: '1' },
+  { name: 'I. Love',       unit: 'ems', shift: '1' },
+  { name: 'J. Baxley',     unit: 'ems', shift: '1' },
+  { name: 'J. Womack',     unit: 'ems', shift: '1' },
+  { name: 'W. Ward',       unit: 'ems', shift: '1' },
+  { name: 'A. Miller',     unit: 'ems', shift: '1' },
+  { name: 'S. Montgomery', unit: 'ems', shift: '2' },
+  { name: 'A. Glosson',    unit: 'ems', shift: '2' },
+  { name: 'C. Sutton',     unit: 'ems', shift: '2' },
+  { name: 'R. Gardner',    unit: 'ems', shift: '2' },
+  { name: 'J. Smith',      unit: 'ems', shift: '2' },
+  { name: 'K. Randolph',   unit: 'ems', shift: '2' },
+  { name: 'A. Clark',      unit: 'ems', shift: '3' },
+  { name: 'R. Adams',      unit: 'ems', shift: '3' },
+  { name: 'I. Fletcher',   unit: 'ems', shift: '3' },
+  { name: 'D. Nations',    unit: 'ems', shift: '3' },
+  { name: 'C. Renfroe',    unit: 'ems', shift: '3' },
+  { name: 'T. McQuigg',    unit: 'ems', shift: '3' },
+];
+
+let roster = [];
+let availability = {};
+let currentUser = '';
+let currentWeekKey = '';
+
+function getWeekDates() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = today.getDay();
+  let daysUntilSat = (6 - dow + 7) % 7;
+  if (daysUntilSat === 0) daysUntilSat = 7;
+  const sat = new Date(today); sat.setDate(today.getDate() + daysUntilSat);
+  const fri = new Date(sat); fri.setDate(sat.getDate() + 6);
+  const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
+  return { sat, label: `Week of ${fmt(sat)} – ${fmt(fri)}`, key: `${sat.getFullYear()}-${sat.getMonth()+1}-${sat.getDate()}` };
+}
+
+function isThursday() { return new Date().getDay() === 4; }
+
+function save() {
+  localStorage.setItem('ot_roster_v2', JSON.stringify(roster));
+  localStorage.setItem('ot_avail_v2', JSON.stringify(availability));
+  localStorage.setItem('ot_user_v2', currentUser);
+}
+
+function load() {
+  const r = localStorage.getItem('ot_roster_v2');
+  const a = localStorage.getItem('ot_avail_v2');
+  const u = localStorage.getItem('ot_user_v2');
+  roster = r ? JSON.parse(r) : DEFAULT_ROSTER.map(p => ({...p}));
+  availability = a ? JSON.parse(a) : {};
+  currentUser = u || '';
+}
+
+function init() {
+  load();
+  const week = getWeekDates();
+  currentWeekKey = week.key;
+  document.getElementById('week-label').textContent = week.label;
+  if (!availability[currentWeekKey]) availability[currentWeekKey] = {};
+  if (isThursday()) document.getElementById('thu-banner').classList.add('show');
+  buildUserSelectors();
+  buildTable();
+  buildOTGrid();
+  updateStats();
+  if (!currentUser) showModal();
+  else {
+    document.getElementById('user-select').value = currentUser;
+    document.getElementById('active-badge').textContent = currentUser;
+    document.getElementById('active-badge').style.display = 'inline';
+  }
+}
+
+function setCurrentUser(val) {
+  currentUser = val;
+  document.getElementById('user-select').value = val;
+  document.getElementById('active-badge').textContent = val || '';
+  document.getElementById('active-badge').style.display = val ? 'inline' : 'none';
+  save(); buildTable();
+}
+
+function buildUserSelectors() {
+  ['user-select','modal-user-select'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">— Select Your Name —</option>';
+    const eg = document.createElement('optgroup'); eg.label = '🚒 Engine Company';
+    roster.filter(p => p.unit === 'engine').forEach(p => {
+      const o = document.createElement('option'); o.value = p.name; o.textContent = p.name; eg.appendChild(o);
+    });
+    sel.appendChild(eg);
+    const emsg = document.createElement('optgroup'); emsg.label = '🚑 EMS';
+    roster.filter(p => p.unit === 'ems').forEach(p => {
+      const o = document.createElement('option'); o.value = p.name; o.textContent = p.name; emsg.appendChild(o);
+    });
+    sel.appendChild(emsg);
+    if (currentUser) sel.value = currentUser;
+  });
+}
+
+function buildTable() {
+  const week = getWeekDates();
+  const headerRow = document.getElementById('col-headers');
+  headerRow.innerHTML = '<th>Name</th>';
+  DAYS.forEach(day => {
+    const d = new Date(week.sat); d.setDate(week.sat.getDate() + day.offset);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+    const th = document.createElement('th');
+    th.className = day.thu ? 'thu-col' : '';
+    th.innerHTML = `${day.label}<br><span style="font-weight:400;font-size:0.7rem;color:${day.thu?'var(--accent)':'var(--muted)'}">${dateStr}</span>`;
+    headerRow.appendChild(th);
+  });
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+  const weekData = availability[currentWeekKey] || {};
+
+  [
+    { key: 'engine', label: '🚒 Engine Company', cls: 'engine' },
+    { key: 'ems',    label: '🚑 EMS',             cls: 'ems' },
+  ].forEach(unit => {
+    const secRow = document.createElement('tr');
+    secRow.className = `section-header ${unit.cls}`;
+    const secTd = document.createElement('td');
+    secTd.colSpan = DAYS.length + 1;
+    secTd.textContent = unit.label;
+    secRow.appendChild(secTd);
+    tbody.appendChild(secRow);
+
+    ['1','2','3'].forEach((shift, si) => {
+      const members = roster.filter(p => p.unit === unit.key && p.shift === shift);
+      if (!members.length) return;
+
+      if (si > 0) {
+        const divRow = document.createElement('tr');
+        divRow.className = 'shift-divider';
+        const divTd = document.createElement('td');
+        divTd.colSpan = DAYS.length + 1;
+        divTd.textContent = `— Shift ${shift} —`;
+        divRow.appendChild(divTd);
+        tbody.appendChild(divRow);
+      }
+
+      members.forEach(person => {
+        const tr = document.createElement('tr');
+        if (person.name === currentUser) tr.classList.add('is-me');
+        const nameTd = document.createElement('td');
+        nameTd.className = 'name-cell';
+        nameTd.style.color = unit.key === 'engine' ? 'var(--engine-color)' : 'var(--ems-color)';
+        nameTd.textContent = person.name;
+        tr.appendChild(nameTd);
+
+        const personData = weekData[person.name] || {};
+        DAYS.forEach(day => {
+          const td = document.createElement('td');
+          td.className = day.thu ? 'thu-cell' : '';
+          const btn = document.createElement('button');
+          btn.className = 'cell-btn';
+          const val = personData[day.key];
+          if (val === true) btn.classList.add('avail');
+          else if (val === false) btn.classList.add('unavail');
+          else btn.classList.add('empty');
+          if (person.name !== currentUser) btn.disabled = true;
+          else btn.onclick = () => toggleCell(person.name, day.key, btn);
+          td.appendChild(btn);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    });
+  });
+}
+
+function toggleCell(name, dayKey, btn) {
+  if (!availability[currentWeekKey]) availability[currentWeekKey] = {};
+  if (!availability[currentWeekKey][name]) availability[currentWeekKey][name] = {};
+  const cur = availability[currentWeekKey][name][dayKey];
+  let next = cur === undefined ? true : cur === true ? false : undefined;
+  if (next === undefined) delete availability[currentWeekKey][name][dayKey];
+  else availability[currentWeekKey][name][dayKey] = next;
+  btn.className = 'cell-btn';
+  if (next === true) btn.classList.add('avail');
+  else if (next === false) btn.classList.add('unavail');
+  else btn.classList.add('empty');
+  save(); buildOTGrid(); updateStats();
+}
+
+function updateStats() {
+  const weekData = availability[currentWeekKey] || {};
+  let filled = 0, avail = 0;
+  const totalCells = roster.length * DAYS.length;
+  roster.forEach(p => {
+    const d = weekData[p.name] || {};
+    DAYS.forEach(day => {
+      if (d[day.key] !== undefined) filled++;
+      if (d[day.key] === true) avail++;
+    });
+  });
+  const pct = totalCells ? Math.round(filled / totalCells * 100) : 0;
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat-chip">Personnel: <strong>${roster.length}</strong></div>
+    <div class="stat-chip">Sheet filled: <strong>${pct}%</strong></div>
+    <div class="stat-chip">Total available slots: <strong>${avail}</strong></div>
+  `;
+}
+
+function buildOTGrid() {
+  const weekData = availability[currentWeekKey] || {};
+  const grid = document.getElementById('ot-day-grid');
+  grid.innerHTML = '';
+  DAYS.forEach(day => {
+    const card = document.createElement('div');
+    card.className = 'ot-day-card' + (day.thu ? ' thu-card' : '');
+    const label = document.createElement('div');
+    label.className = 'ot-day-label';
+    label.textContent = day.label;
+    card.appendChild(label);
+    const ul = document.createElement('ul');
+    ul.className = 'ot-name-list';
+    let count = 0;
+    roster.forEach(p => {
+      if ((weekData[p.name] || {})[day.key] === true) {
+        const li = document.createElement('li');
+        li.className = p.unit === 'engine' ? 'engine-name' : 'ems-name';
+        li.textContent = p.name;
+        ul.appendChild(li); count++;
+      }
+    });
+    if (!count) {
+      const e = document.createElement('div'); e.className = 'ot-empty'; e.textContent = 'No submissions yet';
+      card.appendChild(e);
+    } else card.appendChild(ul);
+    grid.appendChild(card);
+  });
+}
+
+function toggleAdmin() {
+  const p = document.getElementById('admin-panel');
+  p.classList.toggle('show');
+  if (p.classList.contains('show')) buildRosterPanel();
+}
+
+function buildRosterPanel() {
+  const grid = document.getElementById('roster-grid');
+  grid.innerHTML = '';
+  [{ key:'engine', label:'Engine Company', color:'var(--engine-color)' }, { key:'ems', label:'EMS', color:'var(--ems-color)' }].forEach(unit => {
+    const header = document.createElement('div');
+    header.style.cssText = `width:100%;font-family:'Barlow Condensed',sans-serif;font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;color:${unit.color};margin-top:8px;margin-bottom:4px;`;
+    header.textContent = unit.label;
+    grid.appendChild(header);
+    roster.filter(p => p.unit === unit.key).forEach(p => {
+      const idx = roster.indexOf(p);
+      const chip = document.createElement('div');
+      chip.className = 'roster-chip';
+      chip.innerHTML = `<span>${p.name} <span style="color:var(--muted);font-size:0.75rem;">S${p.shift}</span></span><button onclick="removePerson(${idx})" title="Remove">×</button>`;
+      grid.appendChild(chip);
+    });
+  });
+}
+
+function addPerson() {
+  const name = document.getElementById('new-name-input').value.trim();
+  const unit = document.getElementById('new-unit-select').value;
+  const shift = document.getElementById('new-shift-select').value;
+  if (!name) return;
+  if (roster.find(p => p.name === name)) { alert('Name already on roster.'); return; }
+  roster.push({ name, unit, shift });
+  document.getElementById('new-name-input').value = '';
+  save(); buildRosterPanel(); buildUserSelectors(); buildTable(); updateStats();
+}
+
+function removePerson(idx) {
+  const name = roster[idx].name;
+  if (!confirm(`Remove ${name} from roster?`)) return;
+  roster.splice(idx, 1);
+  if (currentUser === name) setCurrentUser('');
+  save(); buildRosterPanel(); buildUserSelectors(); buildTable(); buildOTGrid(); updateStats();
+}
+
+function showModal() { document.getElementById('modal-overlay').classList.add('show'); }
+function closeModal() {
+  if (!currentUser) { alert('Please select your name to continue.'); return; }
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+function printSheet() { window.print(); }
+
+function copyOTList() {
+  const weekData = availability[currentWeekKey] || {};
+  let text = `OT AVAILABILITY — ${document.getElementById('week-label').textContent}\n\n`;
+  DAYS.forEach(day => {
+    const names = roster.filter(p => (weekData[p.name] || {})[day.key] === true).map(p => p.name);
+    text += `${day.label}: ${names.length ? names.join(', ') : 'None'}\n`;
+  });
+  navigator.clipboard.writeText(text).then(() => alert('OT list copied to clipboard!')).catch(() => alert('Copy failed — use Print instead.'));
+}
+
+function clearWeek() {
+  if (!confirm('Clear ALL availability data for this week? This cannot be undone.')) return;
+  availability[currentWeekKey] = {};
+  save(); buildTable(); buildOTGrid(); updateStats();
+}
+
+const ps = document.createElement('style');
+ps.textContent = `@media print {
+  body { background: white; color: black; }
+  #thu-banner, #user-bar, #admin-panel, #export-section, #ot-section { display: none !important; }
+  header { background: white; border-bottom: 2px solid black; }
+  .logo { color: black; } .logo span { color: #c07a00; } .logo-sub { color: #555; }
+  .week-label { color: #c07a00; border-color: #c07a00; background: none; }
+  .table-wrap { border: 1px solid #ccc; }
+  th { color: #555 !important; background: #f5f5f5 !important; border-color: #ccc !important; }
+  th.thu-col { background: #fff8e1 !important; color: #c07a00 !important; }
+  td { border-color: #ccc !important; }
+  td.thu-cell { background: #fffde7 !important; }
+  .cell-btn.avail { background: #c8f7c5 !important; color: #1a6b17 !important; }
+  .cell-btn.unavail { background: #fdd !important; color: #a00 !important; }
+  .cell-btn::after { font-size: 0.65rem; }
+  tr.section-header.engine td { background: #fff3ee !important; color: #b84000 !important; border-color: #b84000 !important; }
+  tr.section-header.ems td { background: #e8f4ff !important; color: #1a6bb5 !important; border-color: #1a6bb5 !important; }
+  tr.shift-divider td { background: #fafafa !important; color: #888 !important; }
+  td.name-cell { color: #333 !important; }
+}`;
+document.head.appendChild(ps);
+
+init();
+</script>
+</body>
+</html>
