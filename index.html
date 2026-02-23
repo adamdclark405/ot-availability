@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OT Availability — HQ Fire</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
     --bg: #0d1117;
@@ -232,6 +233,7 @@
 
   <div id="export-section">
     <button class="btn btn-accent" onclick="printSheet()">🖨 Print / Save PDF</button>
+    <button class="btn btn-green" onclick="exportExcel()">📊 Download Excel (.xlsx)</button>
     <button class="btn btn-outline" onclick="copyOTList()">📋 Copy OT List</button>
     <button class="btn btn-danger" onclick="clearWeek()">🗑 Clear This Week's Data</button>
   </div>
@@ -548,6 +550,65 @@ function showModal() { document.getElementById('modal-overlay').classList.add('s
 function closeModal() {
   if (!currentUser) { alert('Please select your name to continue.'); return; }
   document.getElementById('modal-overlay').classList.remove('show');
+}
+
+function exportExcel() {
+  const weekData = availability[currentWeekKey] || {};
+  const weekLabel = document.getElementById('week-label').textContent;
+  const wb = XLSX.utils.book_new();
+
+  // ── Build the availability sheet ──
+  const dayLabels = DAYS.map(d => d.label);
+  const headers = ['Name', ...dayLabels];
+  const rows = [headers];
+
+  const units = [
+    { key: 'engine', label: '🚒 ENGINE COMPANY' },
+    { key: 'ems',    label: '🚑 EMS' },
+  ];
+
+  units.forEach(unit => {
+    rows.push([unit.label, ...Array(DAYS.length).fill('')]);
+    ['1','2','3'].forEach((shift, si) => {
+      const members = roster.filter(p => p.unit === unit.key && p.shift === shift);
+      if (!members.length) return;
+      if (si > 0) rows.push([`— Shift ${shift} —`, ...Array(DAYS.length).fill('')]);
+      members.forEach(person => {
+        const pData = weekData[person.name] || {};
+        const row = [person.name];
+        DAYS.forEach(day => {
+          const val = pData[day.key];
+          row.push(val === true ? 'AVAIL' : val === false ? 'OFF' : '');
+        });
+        rows.push(row);
+      });
+    });
+    rows.push(Array(DAYS.length + 1).fill('')); // blank spacer
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // Column widths
+  ws['!cols'] = [{ wch: 20 }, ...DAYS.map(() => ({ wch: 10 }))];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Availability');
+
+  // ── Build the OT Summary sheet ──
+  const otRows = [['Day', 'Engine Company', 'EMS', 'All Available']];
+  DAYS.forEach(day => {
+    const engineNames = roster.filter(p => p.unit === 'engine' && (weekData[p.name] || {})[day.key] === true).map(p => p.name).join(', ');
+    const emsNames    = roster.filter(p => p.unit === 'ems'    && (weekData[p.name] || {})[day.key] === true).map(p => p.name).join(', ');
+    const allNames    = roster.filter(p => (weekData[p.name] || {})[day.key] === true).map(p => p.name).join(', ');
+    otRows.push([day.label, engineNames || 'None', emsNames || 'None', allNames || 'None']);
+  });
+
+  const ws2 = XLSX.utils.aoa_to_sheet(otRows);
+  ws2['!cols'] = [{ wch: 10 }, { wch: 30 }, { wch: 40 }, { wch: 60 }];
+  XLSX.utils.book_append_sheet(wb, ws2, 'OT Summary');
+
+  // Generate filename with week date
+  const safeLabel = weekLabel.replace(/[^a-zA-Z0-9\-\/]/g, '_').replace(/\//g, '-');
+  XLSX.writeFile(wb, `OT_Availability_${safeLabel}.xlsx`);
 }
 
 function printSheet() { window.print(); }
